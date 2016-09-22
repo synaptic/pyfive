@@ -15,6 +15,12 @@ class InvalidHDF5File(Exception):
     pass
 
 
+class Reference(object):
+
+    def __init__(self, address_of_reference):
+        self.address_of_reference = address_of_reference
+
+
 class SuperBlock(object):
     """
     HDF5 Superblock.
@@ -453,6 +459,7 @@ class DataObjects(object):
         """ Return the attribute name and value. """
 
         # read in the attribute message header
+        # See section IV.A.2.m. The Attribute Message for details
         version = struct.unpack_from('<B', self.msg_data, offset)[0]
         if version == 1:
             attr_dict = _unpack_struct_from(
@@ -490,7 +497,15 @@ class DataObjects(object):
 
         # read in the value
         if isinstance(dtype, tuple):
-            value = self._vlen_attr_value(offset, dtype)
+            dtype_class = dtype[0]
+            if dtype_class == 'VLEN_STRING':
+                value = self._vlen_attr_value(offset, dtype)
+            elif dtype_class == 'REFERENCE':
+                address = struct.unpack_from(
+                    '<Q', self.msg_data, offset=offset)[0]
+                value = Reference(address)
+            else:
+                raise ValueError
         else:
             value = np.frombuffer(
                 self.msg_data, dtype=dtype, count=1, offset=offset)[0]
@@ -783,7 +798,7 @@ def determine_dtype(buf, offset):
     elif datatype_class == DATATYPE_COMPOUND:
         raise NotImplementedError("Compound datatype class not supported.")
     elif datatype_class == DATATYPE_REFERENCE:
-        raise NotImplementedError("Reference datatype class not supported.")
+        return ('REFERENCE', None)
     elif datatype_class == DATATYPE_ENUMERATED:
         raise NotImplementedError("Enumerated datatype class not supported.")
     elif datatype_class == DATATYPE_ARRAY:

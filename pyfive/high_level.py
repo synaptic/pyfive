@@ -5,7 +5,7 @@ from io import open     # Python 2.7 requires for a Buffered Reader
 
 import numpy as np
 
-from .low_level import SuperBlock, DataObjects
+from .low_level import SuperBlock, DataObjects, Reference
 
 
 class Group(Mapping):
@@ -42,6 +42,13 @@ class Group(Mapping):
 
     def __getitem__(self, y):
         """ x.__getitem__(y) <==> x[y] """
+        if isinstance(y, Reference):
+            dataobjects = DataObjects(self.file._fh, y.address_of_reference)
+            if dataobjects.is_dataset:
+                return Dataset('unknown', dataobjects, self)
+            else:
+                return Group('unknown', dataobjects, self)
+
         y = y.strip('/')
 
         if y not in self._links:
