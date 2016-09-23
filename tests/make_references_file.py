@@ -26,11 +26,17 @@ f.attrs['dataset1_region_reference'] = region_ref
 ref_dtype = h5py.special_dtype(ref=h5py.Reference)
 
 ref_dataset = f.create_dataset(
-    "ref_dataset", (5,), dtype=ref_dtype, track_times=False)
+    "ref_dataset", (4,), dtype=ref_dtype, track_times=False)
 ref_dataset[0] = f.ref
 ref_dataset[1] = dset1.ref
 ref_dataset[2] = grp.ref
-ref_dataset[3] = region_ref
-# ref_dataset[4] is a Null reference
+# ref_dataset[3] is a Null reference
+
+regionref_dtype = h5py.special_dtype(ref=h5py.RegionReference)
+
+regionref_dataset = f.create_dataset(
+    "regionref_dataset", (2,), dtype=regionref_dtype, track_times=False)
+regionref_dataset[0] = region_ref
+# regionref_dataset[1] is a Null reference
 
 f.close()
