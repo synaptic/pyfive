@@ -32,11 +32,24 @@ ref_dataset[1] = dset1.ref
 ref_dataset[2] = grp.ref
 # ref_dataset[3] is a Null reference
 
+chunked_ref_dataset = f.create_dataset(
+    "chunked_ref_dataset", (4,), chunks=(2, ), dtype=ref_dtype,
+    track_times=False)
+chunked_ref_dataset[0] = f.ref
+chunked_ref_dataset[1] = dset1.ref
+chunked_ref_dataset[2] = grp.ref
+# chunked_ref_dataset[3] is a Null reference
+
 regionref_dtype = h5py.special_dtype(ref=h5py.RegionReference)
 
 regionref_dataset = f.create_dataset(
     "regionref_dataset", (2,), dtype=regionref_dtype, track_times=False)
 regionref_dataset[0] = region_ref
-# regionref_dataset[1] is a Null reference
+
+chunked_regionref_dataset = f.create_dataset(
+    "chunked_regionref_dataset", (2,), chunks=(1, ), dtype=regionref_dtype,
+    track_times=False)
+chunked_regionref_dataset[0] = region_ref
+# chunked_regionref_dataset[1] is a Null reference
 
 f.close()
