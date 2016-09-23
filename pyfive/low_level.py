@@ -183,6 +183,19 @@ class BTreeRawDataChunks(object):
     def construct_data_from_chunks(
             self, chunk_shape, data_shape, dtype, filter_pipeline):
         """ Build a complete data array from chunks. """
+        if isinstance(dtype, tuple):
+            true_dtype = tuple(dtype)
+            dtype_class = dtype[0]
+            if dtype_class == 'REFERENCE':
+                size = dtype[1]
+                if size != 8:
+                    raise NotImplementedError('Unsupported Reference type')
+                dtype = '<u8'
+            else:
+                raise NotImplementedError('datatype not implemented')
+        else:
+            true_dtype = None
+
         # create array to store data
         shape = [_padded_size(i, j) for i, j in zip(data_shape, chunk_shape)]
         data = np.zeros(shape, dtype=dtype)
@@ -206,6 +219,13 @@ class BTreeRawDataChunks(object):
                 start = node_key['chunk_offset'][:-1]
                 region = [slice(i, i+j) for i, j in zip(start, chunk_shape)]
                 data[region] = chunk_data.reshape(chunk_shape)
+
+        if isinstance(true_dtype, tuple):
+            if dtype_class == 'REFERENCE':
+                to_reference = np.vectorize(lambda x: Reference(x))
+                data = to_reference(data)
+            else:
+                raise NotImplementedError('datatype not implemented')
 
         non_padded_region = [slice(i) for i in data_shape]
         return data[non_padded_region]
