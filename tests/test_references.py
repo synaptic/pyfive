@@ -2,7 +2,7 @@
 import os
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_raises
 
 import pyfive
 
@@ -52,6 +52,9 @@ def test_reference_dataset():
 
     group = hfile[group_ref]
     assert group.attrs['group_attr'] == 789
+
+    with assert_raises(ValueError):
+        hfile[null_ref]
 
     assert bool(root_ref)
     assert bool(dset_ref)

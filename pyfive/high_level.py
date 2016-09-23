@@ -43,6 +43,8 @@ class Group(Mapping):
     def __getitem__(self, y):
         """ x.__getitem__(y) <==> x[y] """
         if isinstance(y, Reference):
+            if not y:
+                raise ValueError('cannot deference null reference')
             dataobjects = DataObjects(self.file._fh, y.address_of_reference)
             if dataobjects.is_dataset:
                 return Dataset('unknown', dataobjects, self)
