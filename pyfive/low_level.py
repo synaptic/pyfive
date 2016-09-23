@@ -20,6 +20,12 @@ class Reference(object):
     def __init__(self, address_of_reference):
         self.address_of_reference = address_of_reference
 
+    def __bool__(self):
+        # False for null references (address of 0) True otherwise
+        return bool(self.address_of_reference)
+
+    __nonzero__ = __bool__  # Python 2.x requires __nonzero__ for
+
 
 class SuperBlock(object):
     """
@@ -651,9 +657,22 @@ class DataObjects(object):
             # no storage is backing array, return all zeros
             return np.zeros(self.shape, dtype=self.dtype)
 
-        # return a memory-map to the stored array with copy-on-write
-        return np.memmap(self.fh, dtype=self.dtype, mode='c',
-                         offset=data_offset, shape=self.shape, order='C')
+        if not isinstance(self.dtype, tuple):
+            # return a memory-map to the stored array with copy-on-write
+            return np.memmap(self.fh, dtype=self.dtype, mode='c',
+                             offset=data_offset, shape=self.shape, order='C')
+        else:
+            dtype_class = self.dtype[0]
+            if dtype_class == 'REFERENCE':
+                size = self.dtype[1]
+                if size != 8:
+                    raise NotImplementedError('Unsupported Reference type')
+                ref_addresses = np.memmap(
+                    self.fh, dtype=('<u8'), mode='c', offset=data_offset,
+                    shape=self.shape, order='C')
+                return np.array([Reference(addr) for addr in ref_addresses])
+            else:
+                raise NotImplementedError('datatype not implemented')
 
     def _get_chunked_data(self, offset):
         """ Return data which is chunked. """
@@ -798,7 +817,7 @@ def determine_dtype(buf, offset):
     elif datatype_class == DATATYPE_COMPOUND:
         raise NotImplementedError("Compound datatype class not supported.")
     elif datatype_class == DATATYPE_REFERENCE:
-        return ('REFERENCE', None)
+        return ('REFERENCE', datatype_msg['size'])
     elif datatype_class == DATATYPE_ENUMERATED:
         raise NotImplementedError("Enumerated datatype class not supported.")
     elif datatype_class == DATATYPE_ARRAY:
